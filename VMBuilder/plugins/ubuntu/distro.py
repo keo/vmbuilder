@@ -34,7 +34,7 @@ class Ubuntu(Distro):
 
     # Maps host arch to valid guest archs
     valid_archs = { 'amd64' : ['amd64', 'i386', 'lpia' ],
-                    'i386' : [ 'i386', 'lpia' ],
+                    'i386' : [ 'i386', 'lpia', 'armhf' ],
                     'lpia' : [ 'i386', 'lpia' ] }
 
     xen_kernel = ''
@@ -83,7 +83,9 @@ class Ubuntu(Distro):
     def set_defaults(self):
         arch = self.get_setting('arch')
 
-        if arch == 'lpia':
+        print "we are in %s" % arch
+
+        if arch == 'lpia' or arch == 'armhf':
             self.set_setting_default('mirror', 'http://ports.ubuntu.com/ubuntu-ports')
             self.set_setting_default('security-mirror', 'http://ports.ubuntu.com/ubuntu-ports')
         else:
@@ -91,6 +93,8 @@ class Ubuntu(Distro):
             self.set_setting_default('security-mirror', 'http://security.ubuntu.com/ubuntu')
 
         self.set_setting_default('components',  ['main', 'restricted', 'universe'])
+
+        print "mirror is %s" % self.get_setting('mirror')
 
     def preflight_check(self):
         """While not all of these are strictly checks, their failure would inevitably
