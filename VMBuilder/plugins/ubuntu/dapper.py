@@ -255,6 +255,10 @@ class Dapper(suite.Suite):
         arch = self.context.get_setting('arch')
         cmd = ['/usr/sbin/debootstrap', '--arch=%s' % arch]
 
+        # for armel run only first stage on host
+        if arch == 'armhf':
+          cmd += ['--foreign']
+
         variant = self.context.get_setting('variant')
         if variant:
             cmd += ['--variant=%s' % variant]
@@ -271,7 +275,15 @@ class Dapper(suite.Suite):
         if proxy:
             kwargs['env']['http_proxy'] = proxy
         run_cmd(*cmd, **kwargs)
-    
+
+        # for armhf run second stage in qemu
+        if arch == 'armhf':
+           # we need it in rootfs to be able to use binfmt_misc support
+           cmd = ['/bin/cp', '/usr/bin/qemu-arm-static', '%s/usr/bin/' % self.context.chroot_dir]
+           run_cmd(*cmd, **kwargs)
+           cmd = ['/usr/sbin/chroot', self.context.chroot_dir, '/bin/bash', '/debootstrap/debootstrap', '--second-stage']
+           run_cmd(*cmd, **kwargs)
+
     def debootstrap_mirror(self):
         iso = self.context.get_setting('iso')
         if iso:
@@ -304,7 +316,11 @@ class Dapper(suite.Suite):
         return (mirror, updates_mirror, security_mirror)
 
     def install_kernel(self, destdir):
-        run_cmd('chroot', destdir, 'apt-get', '--force-yes', '-y', 'install', self.kernel_name(), env={ 'DEBIAN_FRONTEND' : 'noninteractive' })
+        arch = self.context.get_setting('arch')
+
+        # Don't install kernel for emulated armhf
+        if arch != 'armhf':
+          run_cmd('chroot', destdir, 'apt-get', '--force-yes', '-y', 'install', self.kernel_name(), env={ 'DEBIAN_FRONTEND' : 'noninteractive' })
 
     def install_grub(self, chroot_dir):
         self.install_from_template('/etc/kernel-img.conf', 'kernelimg', { 'updategrub' : self.updategrub })

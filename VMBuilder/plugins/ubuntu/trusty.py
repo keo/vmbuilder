@@ -20,4 +20,7 @@ import time
 from VMBuilder.plugins.ubuntu.saucy import Saucy
 
 class Trusty(Saucy):
+    valid_flavours = { 'i386' :  ['generic', 'generic-pae', 'virtual'],
+                       'armhf':  ['generic'],
+                       'amd64' : ['generic', 'server', 'virtual'] }
     pass
